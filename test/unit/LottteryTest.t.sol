@@ -4,9 +4,10 @@ pragma solidity ^0.8.18;
 import {DeployLottery} from "../../script/DeployLottery.s.sol";
 import {Lottery} from "../../src/Lottery.sol";
 import {Test, console} from "forge-std/Test.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
-contract LotteryTest is Test {
+contract LotteryTest is StdCheats, Test  {
     event EnteredLottery(address indexed player);
 
     Lottery lottery;
