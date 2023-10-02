@@ -6,6 +6,7 @@ import {Lottery} from "../../src/Lottery.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 
 contract LotteryTest is StdCheats, Test {
     event EnteredLottery(address indexed player);
@@ -126,5 +127,18 @@ contract LotteryTest is StdCheats, Test {
         lottery.performUpkeep("");
     }
 
-  
+    function testFullfillRandomWordsCanCalledAfterPerformUpkeep(
+        uint256 randomRequestId
+    ) public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        vm.expectRevert("nonexistent request");
+
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            randomRequestId,
+            address(lottery)
+        );
+    }
 }
