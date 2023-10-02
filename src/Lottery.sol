@@ -83,7 +83,7 @@ contract Lottery is VRFConsumerBaseV2 {
         upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers);
     }
 
-    function performUpkeek(bytes calldata /* performData */) external {
+    function performUpkeep(bytes calldata /* performData */) external {
         (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded) {
             revert Lottery__UpkeepNotNeeded(

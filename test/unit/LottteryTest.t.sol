@@ -7,7 +7,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
-contract LotteryTest is StdCheats, Test  {
+contract LotteryTest is StdCheats, Test {
     event EnteredLottery(address indexed player);
 
     Lottery lottery;
@@ -55,6 +55,7 @@ contract LotteryTest is StdCheats, Test  {
         address playerRecorded = lottery.getPlayer(0);
         assert(playerRecorded == PLAYER);
     }
+
     /*
     function testEmitsEventOnEntrance() public {
         vm.prank(PLAYER);
@@ -64,14 +65,66 @@ contract LotteryTest is StdCheats, Test  {
     }
     */
 
-   function testCantEnterWhenCalculating() public {
-    vm.prank(PLAYER);
-    lottery.enterLottery{value: entranceFee}();
-    vm.warp(block.timestamp + interval + 1);
-    vm.roll(block.number + 1);
-    lottery.performUpkeek("");
-    vm.expectRevert(Lottery.Lottery__LotteryNotOpen.selector);
-    vm.prank(PLAYER);
-    lottery.enterLottery{value: entranceFee}();
-   }
+    function testCantEnterWhenCalculating() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        lottery.performUpkeep("");
+        vm.expectRevert(Lottery.Lottery__LotteryNotOpen.selector);
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+    }
+
+    function testCheckUpkeepIfNoBalance() public {
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        (bool upkeepNeeded, ) = lottery.checkUpkeep("");
+
+        assert(!upkeepNeeded);
+    }
+
+    function testCheckUpkeepIfNotOpen() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        lottery.performUpkeep("");
+
+        (bool upkeepNeeded, ) = lottery.checkUpkeep("");
+
+        assert(!upkeepNeeded);
+    }
+
+    function testCheckUpkeepIfEnoughTimeHasntPassed() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp);
+        vm.roll(block.number + 1);
+        (bool upkeepNeeded, ) = lottery.checkUpkeep("");
+
+        assert(!upkeepNeeded);
+    }
+
+    function testCheckUpkeepIfEverythingIsOk() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        (bool upkeepNeeded, ) = lottery.checkUpkeep("");
+
+        assert(upkeepNeeded);
+    }
+
+    function testPerformUpkeepIfCheckUpkeepIsTrue() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        lottery.performUpkeep("");
+    }
+
+  
 }
