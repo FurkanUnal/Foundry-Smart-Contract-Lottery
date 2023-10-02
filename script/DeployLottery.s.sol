@@ -14,7 +14,8 @@ contract DeployLottery is Script {
         address vrfCoordinator,
         bytes32 keyHash,
         uint64 subscriptionId,
-        uint32 callbackGasLimit) = helperConfig.activeNetworkConfig();
+        uint32 callbackGasLimit,
+        address link) = helperConfig.activeNetworkConfig();
 
         if (subscriptionId == 0){
             CreateSubscription createSubscription = new CreateSubscription();
