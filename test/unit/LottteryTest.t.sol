@@ -7,6 +7,8 @@ import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract LotteryTest is Test {
+    event EnteredLottery(address indexed player);
+
     Lottery lottery;
     HelperConfig helperConfig;
 
@@ -50,4 +52,23 @@ contract LotteryTest is Test {
         address playerRecorded = lottery.getPlayer(0);
         assert(playerRecorded == PLAYER);
     }
+    /*
+    function testEmitsEventOnEntrance() public {
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(lottery));
+        emit EnteredLottery(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+    }
+    */
+
+   function testCantEnterWhenCalculating() public {
+    vm.prank(PLAYER);
+    lottery.enterLottery{value: entranceFee}();
+    vm.warp(block.timestamp + interval + 1);
+    vm.roll(block.number + 1);
+    lottery.performUpkeek("");
+    vm.expectRevert(Lottery.Lottery__LotteryNotOpen.selector);
+    vm.prank(PLAYER);
+    lottery.enterLottery{value: entranceFee}();
+   }
 }
