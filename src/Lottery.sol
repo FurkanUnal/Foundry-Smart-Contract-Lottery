@@ -131,4 +131,16 @@ contract Lottery is VRFConsumerBaseV2 {
     function getPlayer(uint256 index) external view returns (address) {
         return s_players[index];
     }
+
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
+    }
+
+    function getLengthOfPlayers() external view returns (uint256) {
+        return s_players.length;
+    }
+
+    function getLastTimestamp() external view returns (uint256) {
+        return s_lastTimeStamp;
+    }
 }

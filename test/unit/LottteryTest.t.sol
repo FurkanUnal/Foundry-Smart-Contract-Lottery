@@ -7,6 +7,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract LotteryTest is StdCheats, Test {
     event EnteredLottery(address indexed player);
@@ -140,5 +141,40 @@ contract LotteryTest is StdCheats, Test {
             randomRequestId,
             address(lottery)
         );
+    }
+
+    function testFullfillRandomWordsIsWorking() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        uint256 allPlayers = 5;
+
+        for (uint256 i = 1; i < allPlayers + 1; i++) {
+            address player = address(uint160(i));
+            hoax(player, 1 ether);
+            lottery.enterLottery{value: entranceFee}();
+        }
+
+        uint256 prize = entranceFee * (allPlayers + 1);
+
+        vm.recordLogs();
+        lottery.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        uint256 previousTimestamp = lottery.getLastTimestamp();
+
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            uint256(requestId),
+            address(lottery)
+        );
+
+        assert(uint256(lottery.getLotteryState()) == 0);
+        assert(lottery.getRecentWinner() != address(0));
+        assert(lottery.getLengthOfPlayers() == 0);
+        assert(previousTimestamp < lottery.getLastTimestamp());
+        assert(lottery.getRecentWinner().balance == STARTING_BALANCE + prize - entranceFee);
     }
 }
